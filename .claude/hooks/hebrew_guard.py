@@ -5,6 +5,7 @@
 # שלושה מצבים, לפי הארגומנט:
 #   prompt  (UserPromptSubmit) - בתחילת כל תור: תזכורת לכלל, אם השיחה התחילה בעברית.
 #   post    (PostToolUse)      - אחרי כל פעולה: אם השורה האחרונה שנכתבה לברוך יצאה באנגלית, הערה מיידית לתקן.
+#   מצב נוסף: ארגומנט שני global, להתקנה ברמת הסביבה (ראה main).
 #   stop    (Stop)             - לפני סוף התור: בודק את כל מה שנכתב בתור, גם שורות ביניים. משפט אנגלי אחד מחזיר לכתיבה מחדש.
 # מה לא נחשב אנגלית: קוד, פקודות, שמות קבצים ונתיבים, קישורים, מיילים, ושם מוצר של עד שלוש מילים בתוך משפט בעברית.
 import sys, json, re, os, hashlib
@@ -93,6 +94,12 @@ def hebrew_chat(first, current=""):
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "stop"
+    # "global": ההתקנה ברמת הסביבה (~/.claude/settings.json), לשיחות שפתוחות על כמה מאגרים יחד.
+    # אם המאגר הפתוח כבר מריץ את הבדיקה בעצמו, היא לא רצה פעמיים.
+    if len(sys.argv) > 2 and sys.argv[2] == "global":
+        proj = os.environ.get("CLAUDE_PROJECT_DIR", "")
+        if proj and os.path.exists(os.path.join(proj, ".claude", "hooks", "hebrew_guard.py")):
+            return 0
     try:
         d = json.load(sys.stdin)
     except Exception:
